@@ -15,6 +15,18 @@ float sArea(float a_x, float a_y, float b_x,float b_y, float c_x, float c_y){
     return 0.5*(a_x*(b_y - c_y) - a_y*(b_x - c_x) + (b_x*c_y - c_x*b_y));
 }
 
+
+float cart2bary_lamda1(float a_x, float a_y, float b_x,float b_y, float c_x, float c_y, float p_x, float p_y){
+    return ((b_y - c_y)*(p_x-c_x) + (c_x - b_x)*(p_y - c_y))/((b_y - c_y)*(a_x - c_x) + (c_x - b_x)*(a_y - c_y));
+}
+
+float cart2bary_lamda2(float a_x, float a_y, float b_x,float b_y, float c_x, float c_y, float p_x, float p_y){
+    return ((c_y - a_y)*(p_x - c_x) + (a_x - c_x)*(p_y - c_y))/((b_y - c_y)*(a_x - c_x) + (c_x - b_x)*(a_y - c_y));
+}
+
+
+
+
 float get_x(float r, float theta){
     return r*cos(theta);
 }
@@ -22,10 +34,12 @@ float get_y(float r, float theta){
     return r*sin(theta);
 }
 
+
+
 int check_if_stands(float p[], int table){
     float r1,t1,r2,t2,r3,t3;
-    float sTotalArea, sP23, s1P3, s12P;
-    int res;
+    float sTotalArea, sP23, s1P3, s12P,Lam1, Lam2, Lam3;
+    int res = 0;
 
     r1 = p[table];
     t1 = p[table+1];
@@ -35,23 +49,27 @@ int check_if_stands(float p[], int table){
 
     r3 = p[table+4];
     t3 = p[table+5];
-    cout << r1 << "," << t1 << "::" << r2<< ","<< t2 << "::" << r3 << "," << t3 << endl;
-    cout << get_x(r1,t1) << "," << get_y(r1,t1) << "::" << get_x(r2,t2) << "," << get_y(r2,t2) << "::" << get_x(r3,t3) << "," << get_y(r3,t3) << endl;
+    // cout << r1 << "," << t1 << "::" << r2<< ","<< t2 << "::" << r3 << "," << t3 << endl;
+    // cout << get_x(r1,t1) << "," << get_y(r1,t1) << "::" << get_x(r2,t2) << "," << get_y(r2,t2) << "::" << get_x(r3,t3) << "," << get_y(r3,t3) << endl;
+    Lam1 = cart2bary_lamda1(get_x(r1,t1),get_y(r1,t1),get_x(r2,t2),get_y(r2,t2),get_x(r3,t3),get_y(r3,t3),0.0,0.0);
+    Lam2 = cart2bary_lamda2(get_x(r1,t1),get_y(r1,t1),get_x(r2,t2),get_y(r2,t2),get_x(r3,t3),get_y(r3,t3),0.0,0.0);
+    Lam3 = 1. - Lam1 - Lam2;
+    // cout << Lam1 << "::" << Lam2 << "::" << Lam3 << endl;
 
-    sTotalArea = sArea(get_x(r1,t1),get_y(r1,t1),get_x(r2,t2),get_y(r2,t2),get_x(r3,t3),get_y(r3,t3));
-    sP23 = sArea(0.0,0.0,get_x(r2,t2),get_y(r2,t2),get_x(r3,t3),get_y(r3,t3));
-    s1P3 = sArea(get_x(r1,t1),get_y(r1,t1),0.0,0.0,get_x(r3,t3),get_y(r3,t3));
-    s12P = sArea(get_x(r1,t1),get_y(r1,t1),get_x(r2,t2),get_y(r2,t2),0.0,0.0);
+    // sTotalArea = sArea(get_x(r1,t1),get_y(r1,t1),get_x(r2,t2),get_y(r2,t2),get_x(r3,t3),get_y(r3,t3));
+    // sP23 = sArea(0.0,0.0,get_x(r2,t2),get_y(r2,t2),get_x(r3,t3),get_y(r3,t3));
+    // s1P3 = sArea(get_x(r1,t1),get_y(r1,t1),0.0,0.0,get_x(r3,t3),get_y(r3,t3));
+    // s12P = sArea(get_x(r1,t1),get_y(r1,t1),get_x(r2,t2),get_y(r2,t2),0.0,0.0);
 
-    cout << sTotalArea << ":: "<< sP23 << ":: "<< s1P3 << ":: " << s12P << endl;
+    // cout << sTotalArea << ":: "<< sP23 << ":: "<< s1P3 << ":: " << s12P << endl;
     
-    if (sP23/sTotalArea < 0.0){
+    if (Lam1 < 0.0){
         res = 0;
     }
-    else if(s1P3/sTotalArea < 0.0){
+    else if(Lam2 < 0.0){
         res = 0;
     }
-    else if(s12P/sTotalArea < 0.0){
+    else if(Lam3 < 0.0){
         res = 0;
     }
     else{
@@ -62,7 +80,7 @@ int check_if_stands(float p[], int table){
 }
 
 int main(){
-    int no_tables = 1000;
+    int no_tables = 100000;
     int no_points = 3*no_tables;
     int no_can_stand = 0;
     
@@ -79,15 +97,13 @@ int main(){
     for(int i=0; i<no_points; i++){
         coords[2*i]   = gen_rand_no(r_lb,r_ub);
         coords[2*i+1] = gen_rand_no(theta_lb, theta_ub);
-        cout << coords[2*i] << ","<<coords[2*i+1]<< endl;
     }
 
-    for(int i = 0; i < no_tables; i=i+6){
+    for(int i = 0; i < 2*no_points; i=i+6){
         no_can_stand += check_if_stands(coords,i);
-        cout << no_can_stand << "," << i << endl;
     }
 
-    cout <<  no_can_stand<< "/" << no_tables << endl;
+    cout << 100 * (float) no_can_stand/ (float) no_tables << "%" <<  endl;
     
     return 0;
 }
